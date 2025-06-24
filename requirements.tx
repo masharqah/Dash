@@ -1,6 +1,6 @@
-streamlit
-requests
-pandas
-pydeck
-matplotlib
-plotly
+streamlit==1.x.x
+requests==2.x.x
+pandas==2.x.x
+pydeck==0.x.x
+matplotlib==3.x.x
+plotly==5.x.x
