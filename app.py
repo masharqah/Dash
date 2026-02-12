@@ -7,7 +7,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import date, timedelta
 import time
-import re
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -20,178 +19,331 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CUSTOM CSS  – Dark intelligence-grade aesthetic
+# CSS — Modern Light "Command & Control" Theme
+# Palette: off-white canvas · steel-blue authority · amber alerts · crimson danger
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-    --bg-primary:   #0a0e1a;
-    --bg-card:      #111827;
-    --bg-hover:     #1a2236;
-    --accent:       #00d4ff;
-    --accent2:      #ff6b35;
-    --accent3:      #39ff14;
-    --text-primary: #e2e8f0;
-    --text-muted:   #64748b;
-    --border:       rgba(0,212,255,0.15);
-    --danger:       #ef4444;
-    --warning:      #f59e0b;
+    --bg:             #f0f3f8;
+    --surface:        #ffffff;
+    --surface2:       #eaeff7;
+    --navy:           #1b2a4a;
+    --steel:          #2e5fa3;
+    --steel-light:    #e8eef8;
+    --steel-mid:      #b8cce8;
+    --amber:          #d97706;
+    --amber-light:    #fef3c7;
+    --crimson:        #b91c1c;
+    --crimson-light:  #fdecea;
+    --green:          #15803d;
+    --green-light:    #dcfce7;
+    --text:           #1e2b3c;
+    --text-sub:       #4e5f72;
+    --text-muted:     #94a3b8;
+    --border:         #d1dae8;
+    --shadow:         0 1px 8px rgba(27,42,74,0.07), 0 2px 4px rgba(27,42,74,0.04);
+    --shadow-md:      0 4px 20px rgba(27,42,74,0.10), 0 2px 8px rgba(27,42,74,0.06);
 }
 
 html, body, .stApp {
-    background-color: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: 'Inter', sans-serif !important;
 }
 
-/* Hide Streamlit chrome */
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 1.5rem 2rem !important; max-width: 1600px; }
+.block-container { padding: 1.2rem 2rem !important; max-width: 1600px; }
 
-/* ── HEADER ── */
+/* ─── HEADER ─── */
 .main-header {
-    background: linear-gradient(135deg, #0d1b2a 0%, #1a2a4a 50%, #0d1b2a 100%);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--accent);
+    background: linear-gradient(125deg, #1b2a4a 0%, #2c4580 55%, #2e5fa3 100%);
+    border-radius: 12px;
     padding: 1.8rem 2.5rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-md);
     position: relative;
     overflow: hidden;
 }
+.main-header::after {
+    content: '';
+    position: absolute; right: -30px; top: -40px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    pointer-events: none;
+}
 .main-header::before {
     content: '';
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(
-        0deg, transparent, transparent 30px,
-        rgba(0,212,255,0.02) 30px, rgba(0,212,255,0.02) 31px
-    );
+    position: absolute; right: 80px; bottom: -50px;
+    width: 150px; height: 150px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 50%;
+    pointer-events: none;
 }
-.main-header h1 {
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 1.8rem; font-weight: 600;
-    color: var(--accent) !important;
-    margin: 0; letter-spacing: 0.05em;
-    text-shadow: 0 0 20px rgba(0,212,255,0.4);
+.header-left h1 {
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: 2.1rem; font-weight: 700;
+    color: #ffffff !important;
+    margin: 0; letter-spacing: 0.03em;
 }
-.main-header p {
-    color: var(--text-muted); font-size: 0.85rem;
-    margin: 0.3rem 0 0; letter-spacing: 0.08em; text-transform: uppercase;
+.header-left p {
+    color: rgba(255,255,255,0.60);
+    font-size: 0.78rem; margin: 0.3rem 0 0;
+    letter-spacing: 0.12em; text-transform: uppercase;
+}
+.header-badge {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 6px;
+    padding: 0.45rem 1rem;
+    color: rgba(255,255,255,0.80);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.78rem; letter-spacing: 0.14em;
+    text-transform: uppercase; font-weight: 600;
 }
 
-/* ── METRIC CARDS ── */
-.metric-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-top: 2px solid var(--accent);
-    border-radius: 6px;
-    padding: 1.2rem 1.5rem;
-    text-align: center;
-    transition: border-color 0.2s, background 0.2s;
+/* ─── SECTION TITLES ─── */
+.section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.78rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--steel); padding: 0.3rem 0 0.6rem;
+    border-bottom: 2px solid var(--steel-light);
+    margin: 1.4rem 0 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
 }
-.metric-card:hover { background: var(--bg-hover); border-top-color: var(--accent2); }
+
+/* ─── METRIC CARDS ─── */
+.metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    position: relative; overflow: hidden;
+}
+.metric-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--steel), var(--navy));
+    border-radius: 10px 10px 0 0;
+}
+.metric-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 .metric-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 2rem; font-weight: 600;
-    color: var(--accent); line-height: 1.1;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 2.3rem; font-weight: 700;
+    color: var(--navy); line-height: 1.1;
 }
 .metric-label {
-    font-size: 0.75rem; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.3rem;
+    font-size: 0.7rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-top: 0.25rem; font-weight: 600;
 }
-.metric-delta { font-size: 0.8rem; color: var(--accent3); margin-top: 0.2rem; }
+.metric-card.danger::before  { background: linear-gradient(90deg, var(--crimson), #e97316); }
+.metric-card.danger .metric-value { color: var(--crimson); }
+.metric-card.info .metric-value   { color: var(--steel); }
 
-/* ── SECTION HEADERS ── */
-.section-title {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.15em;
-    color: var(--accent); padding: 0.4rem 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1rem;
-}
-
-/* ── BUTTONS ── */
+/* ─── BUTTONS ─── */
 .stButton > button {
-    background: transparent !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-muted) !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    border-radius: 4px !important;
-    transition: all 0.2s !important;
-    padding: 0.5rem 1rem !important;
+    background: var(--surface) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text-sub) !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    border-radius: 8px !important;
+    transition: all 0.15s ease !important;
+    padding: 0.45rem 1rem !important;
 }
 .stButton > button:hover {
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    background: rgba(0,212,255,0.05) !important;
-    box-shadow: 0 0 12px rgba(0,212,255,0.15) !important;
+    border-color: var(--steel) !important;
+    color: var(--steel) !important;
+    background: var(--steel-light) !important;
+    box-shadow: 0 2px 8px rgba(46,95,163,0.14) !important;
 }
 .stButton > button[kind="primary"] {
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    background: rgba(0,212,255,0.08) !important;
+    background: var(--steel) !important;
+    border-color: var(--steel) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 10px rgba(46,95,163,0.28) !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: var(--navy) !important;
+    border-color: var(--navy) !important;
 }
 
-/* ── SIDEBAR ── */
+/* ─── SIDEBAR ─── */
 [data-testid="stSidebar"] {
-    background-color: #080d18 !important;
-    border-right: 1px solid var(--border);
+    background: linear-gradient(180deg, #1b2a4a 0%, #1e3158 100%) !important;
+    border-right: none;
 }
-[data-testid="stSidebar"] .stMarkdown,
+[data-testid="stSidebar"] > div { padding-top: 1.5rem; }
+[data-testid="stSidebar"] .stMarkdown p,
 [data-testid="stSidebar"] label,
-[data-testid="stSidebar"] .stSelectbox label { color: var(--text-muted) !important; }
-
-/* ── INPUTS ── */
-.stTextInput input, .stDateInput input,
-.stSelectbox > div > div, .stMultiSelect > div > div {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-primary) !important;
-    border-radius: 4px !important;
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stTextInput label,
+[data-testid="stSidebar"] .stDateInput label,
+[data-testid="stSidebar"] .stSlider label {
+    color: rgba(255,255,255,0.65) !important;
+    font-size: 0.78rem !important;
 }
-.stSlider > div { color: var(--text-muted) !important; }
-.stSlider .stSlider [data-testid="stTickBarMin"],
-.stSlider [data-testid="stTickBarMax"] { color: var(--text-muted) !important; }
-
-/* ── BRIEFING BOX ── */
-.briefing-box {
-    background: #0a1628;
-    border: 1px solid rgba(0,212,255,0.2);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 1.5rem 2rem;
-    font-family: 'IBM Plex Sans', sans-serif;
-    line-height: 1.8;
-    color: var(--text-primary);
-    white-space: pre-wrap;
+[data-testid="stSidebar"] .section-title {
+    color: rgba(255,255,255,0.40) !important;
+    border-bottom-color: rgba(255,255,255,0.08) !important;
 }
-.briefing-header {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--accent);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.6rem; margin-bottom: 1rem;
+[data-testid="stSidebar"] .stTextInput input,
+[data-testid="stSidebar"] .stDateInput input {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    color: #fff !important;
+    border-radius: 7px !important;
 }
-.status-ok   { color: var(--accent3); }
-.status-warn { color: var(--warning); }
-.status-crit { color: var(--danger); }
+[data-testid="stSidebar"] .stSelectbox > div > div {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    color: #fff !important;
+}
+[data-testid="stSidebar"] .stButton > button {
+    background: var(--steel) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: #3a70b8 !important;
+}
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.09) !important; }
+[data-testid="stSidebar"] .stSuccess { background: rgba(21,128,61,0.2) !important; }
+[data-testid="stSidebar"] .stError   { background: rgba(185,28,28,0.2) !important; }
+[data-testid="stSidebar"] .stInfo    { background: rgba(46,95,163,0.2) !important; }
 
-/* ── DATAFRAME ── */
-.stDataFrame { border: 1px solid var(--border) !important; border-radius: 6px; }
-[data-testid="stDataFrameResizable"] { background: var(--bg-card) !important; }
-
-/* ── EXPANDER ── */
+/* ─── FILTERS EXPANDER ─── */
 [data-testid="stExpander"] {
-    background: var(--bg-card) !important;
+    background: var(--surface) !important;
     border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
+    border-radius: 10px !important;
+    box-shadow: var(--shadow) !important;
 }
+
+/* ─── MAIN INPUT FIELDS ─── */
+.stTextInput input, .stDateInput input,
+.stSelectbox > div > div, .stMultiSelect > div > div,
+.stNumberInput input {
+    background: var(--surface) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 7px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.87rem !important;
+}
+.stTextInput input:focus {
+    border-color: var(--steel) !important;
+    box-shadow: 0 0 0 3px rgba(46,95,163,0.10) !important;
+}
+.stMultiSelect span[data-baseweb="tag"] {
+    background: var(--steel-light) !important;
+    color: var(--steel) !important;
+    border: 1px solid var(--steel-mid) !important;
+    border-radius: 4px !important;
+    font-size: 0.74rem !important;
+}
+
+/* ─── STATUS BANNER ─── */
+.status-bar {
+    background: var(--steel-light);
+    border: 1px solid var(--steel-mid);
+    border-radius: 8px;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.82rem; color: var(--steel);
+    font-weight: 500; margin-bottom: 0.8rem;
+}
+
+/* ─── LEGEND CARD ─── */
+.legend-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.1rem;
+    box-shadow: var(--shadow);
+}
+.legend-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--text-sub); margin-bottom: 0.8rem;
+}
+.legend-item {
+    display: flex; align-items: center;
+    gap: 8px; margin: 5px 0;
+    font-size: 0.71rem; color: var(--text-sub);
+    line-height: 1.4;
+}
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ─── BRIEFING BOX ─── */
+.briefing-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--steel);
+    border-radius: 10px;
+    padding: 2rem 2.4rem;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.9; font-size: 0.9rem;
+    color: var(--text); white-space: pre-wrap;
+    box-shadow: var(--shadow-md);
+}
+.briefing-stamp {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: var(--navy); color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 0.32rem 0.9rem; border-radius: 5px;
+    margin-bottom: 1.3rem;
+}
+.risk-critical { background: var(--crimson-light); color: var(--crimson); font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+.risk-high     { background: #fef3c7; color: #b45309; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+.risk-medium   { background: #fefce8; color: #92400e; font-weight: 600; padding: 1px 6px; border-radius: 3px; }
+.risk-low      { background: var(--green-light); color: var(--green); font-weight: 600; padding: 1px 6px; border-radius: 3px; }
+
+/* ─── DATAFRAME ─── */
+.stDataFrame { border: 1px solid var(--border) !important; border-radius: 8px !important; overflow: hidden; }
+
+/* ─── WELCOME SCREEN ─── */
+.welcome-wrap { text-align: center; padding: 5rem 2rem; }
+.welcome-icon { font-size: 3.8rem; margin-bottom: 1.2rem; }
+.welcome-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--navy); letter-spacing: 0.04em; margin-bottom: 0.7rem;
+}
+.welcome-sub {
+    font-size: 0.9rem; color: var(--text-sub);
+    max-width: 540px; margin: 0 auto; line-height: 1.75;
+}
+.welcome-steps {
+    display: flex; justify-content: center; gap: 1.5rem;
+    margin-top: 2.8rem; flex-wrap: wrap;
+}
+.step-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.3rem 1.6rem;
+    width: 158px; box-shadow: var(--shadow);
+    transition: transform 0.15s;
+}
+.step-card:hover { transform: translateY(-3px); }
+.step-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.6rem; font-weight: 700; color: var(--steel);
+}
+.step-text { font-size: 0.78rem; color: var(--text-sub); margin-top: 0.4rem; line-height: 1.45; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -199,30 +351,27 @@ html, body, .stApp {
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
 ACLED_CONFIG = {
-    "token_url": "https://acleddata.com/oauth/token",
+    "token_url":    "https://acleddata.com/oauth/token",
     "api_read_url": "https://acleddata.com/api/acled/read?_format=json",
 }
 
-# Open-source basemap tile providers (all free, no API key needed)
 BASEMAPS = {
-    "🌑 Dark Matter (Carto)":        "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-    "🗺️ OpenStreetMap Positron":     "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-    "🏔️ OpenStreetMap Voyager":      "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-    "🌲 Stadia Outdoors":            "https://tiles.stadiamaps.com/styles/outdoors.json",
-    "🌆 Stadia Alidade Smooth Dark": "https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json",
-    "🛰️ Satellite (no-key fallback)": "mapbox://styles/mapbox/satellite-v9",
+    "🗺️ Voyager (Recommended)":   "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+    "⬜ Positron (Clean Light)":   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+    "🌲 Stadia Outdoors":          "https://tiles.stadiamaps.com/styles/outdoors.json",
+    "🌑 Dark Matter":              "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+    "🌆 Stadia Smooth Dark":       "https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json",
 }
 
-# Event type color palette
 EVENT_COLORS = {
-    "Battles":                    [220, 38,  38,  200],
-    "Violence against civilians": [249, 115, 22,  200],
-    "Explosions/Remote violence": [234, 179, 8,   200],
-    "Protests":                   [59,  130, 246, 200],
-    "Riots":                      [139, 92,  246, 200],
-    "Strategic developments":     [16,  185, 129, 200],
+    "Battles":                    [185, 28,  28,  215],
+    "Violence against civilians": [217, 119,  6,  215],
+    "Explosions/Remote violence": [161, 100,  0,  215],
+    "Protests":                   [37,   99, 235, 215],
+    "Riots":                      [124,  58, 237, 215],
+    "Strategic developments":     [5,   150, 105, 215],
 }
-DEFAULT_COLOR = [100, 116, 139, 160]
+DEFAULT_COLOR = [71, 85, 105, 180]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SESSION STATE
@@ -234,13 +383,12 @@ for k, v in {
     "selected_temporal_date": None,
     "is_playing": False,
     "briefing_text": "",
-    "briefing_loading": False,
 }.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CORE API FUNCTIONS
+# API FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=86400)
 def get_access_token(username, password, token_url):
@@ -254,6 +402,7 @@ def get_access_token(username, password, token_url):
     except Exception as e:
         st.error(f"Auth error: {e}")
         return None
+
 
 @st.cache_data(ttl=3600)
 def fetch_acled_data(token, countries, start_date, end_date):
@@ -276,11 +425,11 @@ def fetch_acled_data(token, countries, start_date, end_date):
             st.warning(f"Error fetching {country}: {e}")
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
+
 # ─────────────────────────────────────────────────────────────────────────────
-# BRIEFING GENERATOR  (free LLM via Ollama HTTP or HuggingFace Inference API)
+# LLM BRIEFING
 # ─────────────────────────────────────────────────────────────────────────────
 def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localhost:11434") -> str:
-    """Call a locally-running Ollama instance."""
     try:
         r = requests.post(
             f"{host}/api/generate",
@@ -291,22 +440,30 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
             return r.json().get("response", "No response from Ollama.")
         return f"Ollama error {r.status_code}: {r.text[:300]}"
     except requests.exceptions.ConnectionError:
-        return None  # signal to try fallback
+        return None
 
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
-    """Call HuggingFace Inference API (free tier – no key needed for public models)."""
-    model_id = "HuggingFaceH4/zephyr-7b-beta"
-    url = f"https://api-inference.huggingface.co/models/{model_id}"
+    """
+    Uses the updated HuggingFace router endpoint.
+    Old endpoint (api-inference.huggingface.co) was deprecated with HTTP 410.
+    New endpoint: router.huggingface.co/hf-inference/models/<model_id>
+    """
+    # Use Mistral-7B with token (better quality), otherwise phi-2 anonymously
+    model_id = "mistralai/Mistral-7B-Instruct-v0.3" if hf_token else "microsoft/phi-2"
+    url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
+
     headers = {"Content-Type": "application/json"}
     if hf_token:
         headers["Authorization"] = f"Bearer {hf_token}"
+
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 1024,
+            "max_new_tokens": 900,
             "temperature": 0.4,
             "return_full_text": False,
+            "do_sample": True,
         },
     }
     try:
@@ -314,49 +471,52 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
         if r.status_code == 200:
             result = r.json()
             if isinstance(result, list) and result:
-                return result[0].get("generated_text", "Empty response.")
+                return result[0].get("generated_text", "").strip()
+            if isinstance(result, dict):
+                return result.get("generated_text", str(result)).strip()
             return str(result)
-        return f"HuggingFace API error {r.status_code}: {r.text[:400]}"
+        if r.status_code == 503:
+            return ("⏳ Model is loading on HuggingFace servers. "
+                    "Please wait ~20 seconds and try again.")
+        return f"HuggingFace error {r.status_code}: {r.text[:500]}"
     except Exception as e:
         return f"HuggingFace request failed: {e}"
 
 
 def build_briefing_prompt(df: pd.DataFrame, context: str = "") -> str:
-    total_events   = len(df)
+    total_events     = len(df)
     total_fatalities = int(df["fatalities"].sum())
-    date_range     = f"{df['event_date'].min().strftime('%d %b %Y')} – {df['event_date'].max().strftime('%d %b %Y')}"
-    regions        = df["admin1"].dropna().value_counts().head(5).to_dict()
-    event_types    = df["event_type"].dropna().value_counts().to_dict()
-    actors         = df["actor1"].dropna().value_counts().head(8).to_dict()
-    deadliest      = df.nlargest(3, "fatalities")[["event_date","event_type","location","fatalities","notes"]].to_dict("records")
+    date_range       = (f"{df['event_date'].min().strftime('%d %b %Y')} – "
+                        f"{df['event_date'].max().strftime('%d %b %Y')}")
+    regions     = df["admin1"].dropna().value_counts().head(5).to_dict()
+    event_types = df["event_type"].dropna().value_counts().to_dict()
+    actors      = df["actor1"].dropna().value_counts().head(8).to_dict()
+    deadliest   = (df.nlargest(3, "fatalities")
+                     [["event_date", "event_type", "location", "fatalities", "notes"]]
+                     .to_dict("records"))
 
-    # Collect a sample of incident notes (up to 20, non-empty)
-    notes_sample = (
-        df["notes"]
-        .dropna()
-        .loc[df["notes"].str.strip() != ""]
-        .sample(min(20, len(df)), random_state=42)
-        .tolist()
-    )
-    notes_block = "\n".join(f"- {n[:400]}" for n in notes_sample)
+    notes_col = df["notes"].dropna().loc[df["notes"].str.strip() != ""]
+    notes_sample = notes_col.sample(min(20, len(notes_col)), random_state=42).tolist()
+    notes_block  = "\n".join(f"- {n[:400]}" for n in notes_sample)
 
     deadliest_block = "\n".join(
-        f"  [{r['event_date'].strftime('%d %b %Y') if hasattr(r['event_date'],'strftime') else r['event_date']}] "
-        f"{r['event_type']} in {r['location']} – {int(r['fatalities'])} fatalities. {str(r.get('notes',''))[:200]}"
+        f"  [{r['event_date'].strftime('%d %b %Y') if hasattr(r['event_date'], 'strftime') else r['event_date']}] "
+        f"{r['event_type']} in {r['location']} – {int(r['fatalities'])} fatalities. "
+        f"{str(r.get('notes', ''))[:200]}"
         for r in deadliest
     )
 
     prompt = f"""You are a professional security analyst. Write a structured intelligence briefing in plain text.
-Use the following verified data. Be concise, analytical, and objective.
-Do NOT use markdown formatting symbols like ** or ##. Use plain section titles in ALL CAPS.
+Use the verified data below. Be concise, analytical, and objective.
+Do NOT use markdown symbols like ** or ##. Use plain section titles in ALL CAPS.
 
 --- DATA SUMMARY ---
-Period        : {date_range}
-Total Events  : {total_events}
+Period          : {date_range}
+Total Events    : {total_events}
 Total Fatalities: {total_fatalities}
-Top Regions   : {json.dumps(regions)}
-Event Types   : {json.dumps(event_types)}
-Key Actors    : {json.dumps(actors)}
+Top Regions     : {json.dumps(regions)}
+Event Types     : {json.dumps(event_types)}
+Key Actors      : {json.dumps(actors)}
 
 DEADLIEST INCIDENTS:
 {deadliest_block}
@@ -366,80 +526,78 @@ SAMPLE INCIDENT NOTES:
 
 {"ANALYST FOCUS: " + context if context else ""}
 
---- REQUIRED STRUCTURE ---
+--- REQUIRED OUTPUT STRUCTURE (use exactly these ALL-CAPS titles) ---
+
 SITUATION OVERVIEW
-[2-3 sentences on overall security situation]
+[2-3 sentences on the overall security situation]
 
 KEY FINDINGS
 [3-5 bullet points with the most significant patterns and numbers]
 
 THREAT ACTORS
-[Brief paragraph on dominant actors and their activity]
+[Brief paragraph on dominant actors and their activity patterns]
 
 GEOGRAPHIC HOTSPOTS
-[Identify 2-3 most affected areas with specific details]
+[2-3 most affected areas with specific data points]
 
 TREND ANALYSIS
-[Describe escalation, de-escalation, or shifts in tactics based on the notes]
+[Describe escalation, de-escalation, or tactical shifts based on the notes]
 
 RISK ASSESSMENT
-[Overall risk level: LOW / MEDIUM / HIGH / CRITICAL with justification]
+[One line: Overall risk level is LOW / MEDIUM / HIGH / CRITICAL — one-sentence justification]
 
 RECOMMENDATIONS
-[2-3 actionable recommendations for operational planning]
+[2-3 actionable recommendations for operational or policy planning]
 
 --- END BRIEFING ---
 """
     return prompt
 
 
-def generate_briefing(df: pd.DataFrame, context: str, llm_source: str,
-                      ollama_host: str, ollama_model: str, hf_token: str) -> str:
+def generate_briefing(df, context, llm_source, ollama_host, ollama_model, hf_token):
     prompt = build_briefing_prompt(df, context)
-
     if llm_source == "Ollama (Local)":
         result = call_ollama(prompt, model=ollama_model, host=ollama_host)
         if result is None:
-            return "❌ Could not connect to Ollama. Make sure it is running at the configured host."
+            return "❌ Cannot connect to Ollama. Ensure it is running at the configured host."
         return result
-
-    elif llm_source == "HuggingFace Inference API (Free)":
+    elif llm_source == "HuggingFace Router (Free)":
         return call_huggingface(prompt, hf_token)
-
-    return "No LLM source selected."
+    return "No LLM source configured."
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("""
+today_str = date.today().strftime("%d %b %Y").upper()
+st.markdown(f"""
 <div class="main-header">
-  <h1>🛡️ SECURITY DATA EXPLORER</h1>
-  <p>ACLED — Advanced Conflict Intelligence Platform</p>
+  <div class="header-left">
+    <h1>🛡️ Security Data Explorer</h1>
+    <p>ACLED — Advanced Conflict Intelligence Platform</p>
+  </div>
+  <div class="header-badge">⬤ &nbsp;Live · {today_str}</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SIDEBAR  — Control Panel
+# SIDEBAR
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<div class="section-title">⚙ CONTROL PANEL</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">⚙ Data Source</div>', unsafe_allow_html=True)
 
-    # Credentials
     try:
         email    = st.secrets["acled"]["email"]
         password = st.secrets["acled"]["password"]
-        st.success("✅ ACLED credentials loaded")
+        st.success("✅ Credentials loaded")
     except Exception:
-        st.error("❌ Missing ACLED credentials in Secrets")
-        st.info("Add [acled] email / password to .streamlit/secrets.toml")
+        st.error("❌ Missing ACLED credentials")
+        st.info("Add [acled] email + password to .streamlit/secrets.toml")
         st.stop()
 
-    # Countries
     countries_input = st.text_input("Countries (comma-separated)", "Palestine, Israel")
     countries_list  = [c.strip() for c in countries_input.split(",") if c.strip()]
 
-    # Date range
     col1, col2 = st.columns(2)
     start_date = col1.date_input("From", date.today() - timedelta(days=30))
     end_date   = col2.date_input("To",   date.today())
@@ -447,39 +605,32 @@ with st.sidebar:
     fetch_button = st.button("🚀 Fetch Data", type="primary", use_container_width=True)
 
     st.markdown("---")
-    # ── MAP SETTINGS ──────────────────────────────────────────────────────────
-    st.markdown('<div class="section-title">🗺 MAP SETTINGS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🗺 Map Settings</div>', unsafe_allow_html=True)
 
-    basemap_choice = st.selectbox(
-        "Basemap",
-        list(BASEMAPS.keys()),
-        index=0,
-        help="Open-source tile providers – no API key required for Carto/Stadia"
-    )
+    basemap_choice     = st.selectbox("Basemap", list(BASEMAPS.keys()), index=0)
     selected_map_style = BASEMAPS[basemap_choice]
-
-    point_radius = st.slider("Point Radius (m)", 500, 8000, 2000, 250)
-    point_opacity = st.slider("Point Opacity", 0.1, 1.0, 0.75, 0.05)
-    zoom_level = st.slider("Default Zoom", 4, 14, 7)
+    point_radius       = st.slider("Point Radius (m)", 500, 8000, 2000, 250)
+    point_opacity      = st.slider("Point Opacity",    0.1, 1.0,  0.75, 0.05)
+    zoom_level         = st.slider("Default Zoom",     4,   14,   7)
 
     st.markdown("---")
-    # ── LLM SETTINGS ──────────────────────────────────────────────────────────
-    st.markdown('<div class="section-title">🤖 BRIEFING LLM</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🤖 Briefing LLM</div>', unsafe_allow_html=True)
 
     llm_source = st.selectbox(
         "LLM Backend",
-        ["Ollama (Local)", "HuggingFace Inference API (Free)"],
-        help="Ollama: run locally for free. HuggingFace: free API (rate-limited)."
+        ["Ollama (Local)", "HuggingFace Router (Free)"],
+        help="Ollama: private local inference. HuggingFace: free cloud API (router endpoint)."
     )
 
     if llm_source == "Ollama (Local)":
         ollama_host  = st.text_input("Ollama Host", "http://localhost:11434")
         ollama_model = st.text_input("Model", "mistral",
-                                     help="e.g. mistral, llama3, phi3, gemma2")
+                                     help="mistral · llama3 · phi3 · gemma2")
         hf_token = ""
     else:
+        st.caption("Free: `microsoft/phi-2` (no token)  |  Better: `Mistral-7B` with token")
         hf_token     = st.text_input("HF Token (optional)", type="password",
-                                     help="Increases rate limits. Leave blank for anonymous use.")
+                                     help="Free token at huggingface.co/settings/tokens")
         ollama_host  = ""
         ollama_model = ""
 
@@ -489,13 +640,13 @@ with st.sidebar:
 if fetch_button:
     token = get_access_token(email, password, ACLED_CONFIG["token_url"])
     if token:
-        with st.spinner("Fetching conflict data…"):
+        with st.spinner("Fetching conflict data from ACLED…"):
             raw_df = fetch_acled_data(token, tuple(countries_list), start_date, end_date)
             if not raw_df.empty:
-                raw_df["event_date"]  = pd.to_datetime(raw_df["event_date"])
-                raw_df["latitude"]    = pd.to_numeric(raw_df["latitude"],  errors="coerce")
-                raw_df["longitude"]   = pd.to_numeric(raw_df["longitude"], errors="coerce")
-                raw_df["fatalities"]  = pd.to_numeric(raw_df["fatalities"],errors="coerce").fillna(0)
+                raw_df["event_date"] = pd.to_datetime(raw_df["event_date"])
+                raw_df["latitude"]   = pd.to_numeric(raw_df["latitude"],   errors="coerce")
+                raw_df["longitude"]  = pd.to_numeric(raw_df["longitude"],  errors="coerce")
+                raw_df["fatalities"] = pd.to_numeric(raw_df["fatalities"], errors="coerce").fillna(0)
                 raw_df = raw_df.dropna(subset=["latitude", "longitude"])
 
                 st.session_state.original_df  = raw_df
@@ -504,7 +655,7 @@ if fetch_button:
                 st.session_state.briefing_text = ""
                 st.rerun()
             else:
-                st.warning("No data returned for the selected parameters.")
+                st.warning("No data returned. Try different countries or a wider date range.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN DASHBOARD
@@ -513,92 +664,82 @@ if st.session_state.data_fetched:
     full_df = st.session_state.original_df.copy()
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SECTION 1 — FILTERS
+    # FILTERS
     # ══════════════════════════════════════════════════════════════════════════
-    with st.expander("🔍  ADVANCED FILTERS", expanded=True):
+    with st.expander("🔍  Advanced Filters", expanded=True):
         fc1, fc2, fc3, fc4 = st.columns(4)
 
-        # Event type
         all_event_types = sorted(full_df["event_type"].dropna().unique().tolist())
-        sel_event_types = fc1.multiselect(
-            "Event Type", all_event_types, default=all_event_types, key="f_et"
-        )
+        sel_event_types = fc1.multiselect("Event Type", all_event_types,
+                                          default=all_event_types, key="f_et")
 
-        # Sub-event type
-        all_sub_events = sorted(full_df["sub_event_type"].dropna().unique().tolist())
-        sel_sub_events = fc2.multiselect(
-            "Sub-Event Type", all_sub_events, default=all_sub_events, key="f_se"
-        )
+        all_sub = sorted(full_df["sub_event_type"].dropna().unique().tolist())
+        sel_sub = fc2.multiselect("Sub-Event Type", all_sub, default=all_sub, key="f_se")
 
-        # Country
         all_countries = sorted(full_df["country"].dropna().unique().tolist())
-        sel_countries = fc3.multiselect(
-            "Country", all_countries, default=all_countries, key="f_co"
-        )
+        sel_countries = fc3.multiselect("Country", all_countries,
+                                        default=all_countries, key="f_co")
 
-        # Admin 1 (Region)
         all_admin1 = sorted(full_df["admin1"].dropna().unique().tolist())
-        sel_admin1 = fc4.multiselect(
-            "Region (Admin1)", all_admin1, default=all_admin1, key="f_a1"
-        )
+        sel_admin1 = fc4.multiselect("Region (Admin1)", all_admin1,
+                                     default=all_admin1, key="f_a1")
 
         fc5, fc6, fc7 = st.columns(3)
 
-        # Admin 2 (District) — cascaded
-        available_admin2 = sorted(
+        avail_admin2 = sorted(
             full_df[full_df["admin1"].isin(sel_admin1)]["admin2"].dropna().unique().tolist()
         )
-        sel_admin2 = fc5.multiselect(
-            "District (Admin2)", available_admin2, default=available_admin2, key="f_a2"
-        )
+        sel_admin2 = fc5.multiselect("District (Admin2)", avail_admin2,
+                                     default=avail_admin2, key="f_a2")
 
-        # Actor
         all_actors = sorted(full_df["actor1"].dropna().unique().tolist())
-        sel_actors = fc6.multiselect(
-            "Primary Actor", all_actors, default=all_actors, key="f_ac"
-        )
+        sel_actors = fc6.multiselect("Primary Actor", all_actors,
+                                     default=all_actors, key="f_ac")
 
-        # Fatalities range
-        max_fat = int(full_df["fatalities"].max()) or 1
-        fat_range = fc7.slider(
-            "Fatalities Range", 0, max_fat, (0, max_fat), key="f_fr"
-        )
+        max_fat   = int(full_df["fatalities"].max()) or 1
+        fat_range = fc7.slider("Fatalities Range", 0, max_fat, (0, max_fat), key="f_fr")
 
     # Apply filters
     filtered_df = full_df[
         full_df["event_type"].isin(sel_event_types) &
-        full_df["sub_event_type"].isin(sel_sub_events) &
+        full_df["sub_event_type"].isin(sel_sub) &
         full_df["country"].isin(sel_countries) &
         full_df["admin1"].isin(sel_admin1) &
         full_df["actor1"].isin(sel_actors) &
         full_df["fatalities"].between(fat_range[0], fat_range[1])
-    ]
+    ].copy()
     if sel_admin2:
         filtered_df = filtered_df[filtered_df["admin2"].isin(sel_admin2)]
 
-    st.caption(f"Showing **{len(filtered_df):,}** events after filters (from {len(full_df):,} total)")
+    st.markdown(
+        f'<div class="status-bar">'
+        f'🔎 Showing <strong>{len(filtered_df):,}</strong> events after filters'
+        f'&nbsp;&nbsp;|&nbsp;&nbsp;{len(full_df):,} total records loaded'
+        f'</div>',
+        unsafe_allow_html=True
+    )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SECTION 2 — KEY METRICS
+    # KEY METRICS
     # ══════════════════════════════════════════════════════════════════════════
-    st.markdown('<div class="section-title">📊 KEY METRICS</div>', unsafe_allow_html=True)
-    m1, m2, m3, m4, m5 = st.columns(5)
+    st.markdown('<div class="section-title">📊 Key Metrics</div>', unsafe_allow_html=True)
 
     days_span = max((filtered_df["event_date"].max() - filtered_df["event_date"].min()).days, 1)
+    avg_daily = len(filtered_df) / days_span
 
-    m1.markdown(f'<div class="metric-card"><div class="metric-value">{len(filtered_df):,}</div><div class="metric-label">Total Events</div></div>', unsafe_allow_html=True)
-    m2.markdown(f'<div class="metric-card"><div class="metric-value">{int(filtered_df["fatalities"].sum()):,}</div><div class="metric-label">Fatalities</div></div>', unsafe_allow_html=True)
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.markdown(f'<div class="metric-card info"><div class="metric-value">{len(filtered_df):,}</div><div class="metric-label">Total Events</div></div>', unsafe_allow_html=True)
+    m2.markdown(f'<div class="metric-card danger"><div class="metric-value">{int(filtered_df["fatalities"].sum()):,}</div><div class="metric-label">Fatalities</div></div>', unsafe_allow_html=True)
     m3.markdown(f'<div class="metric-card"><div class="metric-value">{filtered_df["admin1"].nunique()}</div><div class="metric-label">Regions Affected</div></div>', unsafe_allow_html=True)
     m4.markdown(f'<div class="metric-card"><div class="metric-value">{days_span}</div><div class="metric-label">Day Span</div></div>', unsafe_allow_html=True)
-    avg_daily = len(filtered_df) / days_span if days_span else 0
-    m5.markdown(f'<div class="metric-card"><div class="metric-value">{avg_daily:.1f}</div><div class="metric-label">Avg Events/Day</div></div>', unsafe_allow_html=True)
+    m5.markdown(f'<div class="metric-card"><div class="metric-value">{avg_daily:.1f}</div><div class="metric-label">Avg Events / Day</div></div>', unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SECTION 3 — MAP
+    # MAP
     # ══════════════════════════════════════════════════════════════════════════
-    st.markdown('<div class="section-title">🗺 GEOSPATIAL DISTRIBUTION</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🗺 Geospatial Distribution</div>', unsafe_allow_html=True)
 
-    mode_cols = st.columns(5)
+    mc = st.columns(5)
     for idx, (label, key) in enumerate([
         ("🎨 Categories", "Categories"),
         ("🔥 Heatmap",    "Heatmap"),
@@ -606,12 +747,11 @@ if st.session_state.data_fetched:
         ("⏳ Temporal",   "Temporal"),
         ("📍 Cluster",    "Cluster"),
     ]):
-        if mode_cols[idx].button(label, use_container_width=True):
+        if mc[idx].button(label, use_container_width=True):
             st.session_state.map_mode = key
 
     display_df = filtered_df.copy()
 
-    # Temporal controls
     if st.session_state.map_mode == "Temporal":
         unique_dates = sorted(filtered_df["event_date"].dt.date.unique())
         if unique_dates:
@@ -623,26 +763,39 @@ if st.session_state.data_fetched:
                 value=st.session_state.selected_temporal_date,
             )
             display_df = filtered_df[filtered_df["event_date"].dt.date == selected_date].copy()
-            pc1, pc2, pc3 = st.columns([1, 1, 4])
+            pc1, pc2, _ = st.columns([1, 1, 5])
             if pc1.button("▶️ Play"):  st.session_state.is_playing = True
             if pc2.button("⏸️ Stop"):  st.session_state.is_playing = False
-            st.caption(f"{selected_date} — {len(display_df)} events")
+            st.caption(f"{selected_date}  ·  {len(display_df)} events")
             if st.session_state.is_playing and unique_dates:
                 time.sleep(0.4)
                 idx_now = unique_dates.index(selected_date)
                 st.session_state.selected_temporal_date = unique_dates[(idx_now + 1) % len(unique_dates)]
                 st.rerun()
 
-    # Build layers
     lat_c = display_df["latitude"].mean()  if not display_df.empty else 32.0
     lon_c = display_df["longitude"].mean() if not display_df.empty else 35.0
-
     view_state = pdk.ViewState(latitude=lat_c, longitude=lon_c, zoom=zoom_level, pitch=0)
 
-    tooltip = {"html": "<b>{event_type}</b><br/>{location}<br/>Actor: {actor1}<br/>Fatalities: {fatalities}<br/><i>{notes}</i>",
-               "style": {"background": "#0a0e1a", "color": "#e2e8f0",
-                         "font-family": "'IBM Plex Mono', monospace",
-                         "font-size": "12px", "padding": "8px", "border": "1px solid #00d4ff"}}
+    tooltip = {
+        "html": (
+            "<div style='font-family:Inter,sans-serif;font-size:12px;padding:8px 10px;line-height:1.6;'>"
+            "<b style='color:#2e5fa3;font-size:13px;'>{event_type}</b><br/>"
+            "📍 {location}<br/>"
+            "👤 {actor1}<br/>"
+            "💀 Fatalities: <b>{fatalities}</b><br/>"
+            "<span style='color:#666;font-size:11px;'>{notes}</span>"
+            "</div>"
+        ),
+        "style": {
+            "background": "#ffffff",
+            "color": "#1e2b3c",
+            "border": "1px solid #d1dae8",
+            "border-radius": "8px",
+            "box-shadow": "0 4px 14px rgba(0,0,0,0.10)",
+            "max-width": "300px",
+        }
+    }
 
     mode = st.session_state.map_mode
 
@@ -651,48 +804,38 @@ if st.session_state.data_fetched:
             "HeatmapLayer", display_df,
             get_position="[longitude, latitude]",
             get_weight="fatalities",
-            opacity=point_opacity,
-            threshold=0.05,
-            radiusPixels=40,
+            opacity=point_opacity, threshold=0.05, radiusPixels=40,
         )]
-
     elif mode == "Impact":
-        df_map = display_df.copy()
-        max_f = df_map["fatalities"].max() or 1
-        df_map["radius"] = (df_map["fatalities"] / max_f) * 15000 + 800
-        df_map["color"]  = df_map["fatalities"].apply(
-            lambda f: [255, int(max(0, 100 - f * 3)), 50, 200]
+        dm = display_df.copy()
+        max_f = dm["fatalities"].max() or 1
+        dm["radius"] = (dm["fatalities"] / max_f) * 15000 + 800
+        dm["color"]  = dm["fatalities"].apply(
+            lambda f: [185, 28, 28, min(220, int(120 + f * 4))]
         )
         layers = [pdk.Layer(
-            "ScatterplotLayer", df_map,
+            "ScatterplotLayer", dm,
             get_position="[longitude, latitude]",
-            get_radius="radius",
-            get_fill_color="color",
-            pickable=True,
+            get_radius="radius", get_fill_color="color",
+            pickable=True, stroked=True,
+            get_line_color=[255, 255, 255], line_width_min_pixels=1,
         )]
-
     elif mode == "Cluster":
         layers = [pdk.Layer(
-            "IconClusterLayer",
-            display_df,
+            "ScatterplotLayer", display_df,
             get_position="[longitude, latitude]",
-            pickable=True,
-            size_scale=40,
+            get_radius=int(point_radius * 0.6),
+            get_fill_color=[46, 95, 163, 160], pickable=True,
         )]
-
-    else:  # Categories (default) + Temporal
-        def get_color(et):
-            return EVENT_COLORS.get(et, DEFAULT_COLOR)
-        df_map = display_df.copy()
-        df_map["color"] = df_map["event_type"].apply(get_color)
+    else:
+        dm = display_df.copy()
+        dm["color"] = dm["event_type"].apply(lambda e: EVENT_COLORS.get(e, DEFAULT_COLOR))
         layers = [pdk.Layer(
-            "ScatterplotLayer", df_map,
+            "ScatterplotLayer", dm,
             get_position="[longitude, latitude]",
-            get_radius=point_radius,
-            get_fill_color="color",
-            opacity=point_opacity,
-            pickable=True,
-            auto_highlight=True,
+            get_radius=point_radius, get_fill_color="color",
+            opacity=point_opacity, pickable=True,
+            auto_highlight=True, highlight_color=[255, 200, 0, 255],
         )]
 
     map_col, leg_col = st.columns([5, 1])
@@ -706,42 +849,50 @@ if st.session_state.data_fetched:
 
     with leg_col:
         if mode in ("Categories", "Temporal"):
-            st.markdown("**Legend**")
+            lines = '<div class="legend-card"><div class="legend-title">Event Types</div>'
             for etype, rgba in EVENT_COLORS.items():
-                hex_col = "#{:02x}{:02x}{:02x}".format(*rgba[:3])
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">'
-                    f'<div style="width:12px;height:12px;border-radius:50%;background:{hex_col};flex-shrink:0;"></div>'
-                    f'<span style="font-size:0.72rem;color:#94a3b8;">{etype}</span></div>',
-                    unsafe_allow_html=True,
-                )
+                hc = "#{:02x}{:02x}{:02x}".format(*rgba[:3])
+                lines += (f'<div class="legend-item">'
+                          f'<div class="legend-dot" style="background:{hc};"></div>'
+                          f'{etype}</div>')
+            lines += '</div>'
+            st.markdown(lines, unsafe_allow_html=True)
         elif mode == "Heatmap":
-            st.markdown("**Heatmap**")
-            st.markdown('<div style="font-size:0.72rem;color:#94a3b8;">Intensity = fatality weight</div>', unsafe_allow_html=True)
+            st.markdown('<div class="legend-card"><div class="legend-title">Heatmap</div>'
+                        '<p style="font-size:0.71rem;color:#5a6b7e;">Intensity weighted by fatality count.</p></div>',
+                        unsafe_allow_html=True)
         elif mode == "Impact":
-            st.markdown("**Impact**")
-            st.markdown('<div style="font-size:0.72rem;color:#94a3b8;">Radius & color = fatality count</div>', unsafe_allow_html=True)
+            st.markdown('<div class="legend-card"><div class="legend-title">Impact</div>'
+                        '<p style="font-size:0.71rem;color:#5a6b7e;">Circle size and colour reflect fatality count.</p></div>',
+                        unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="legend-card"><div class="legend-title">Cluster</div>'
+                        '<p style="font-size:0.71rem;color:#5a6b7e;">Events as uniform blue dots.</p></div>',
+                        unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SECTION 4 — ANALYTICS
+    # ANALYTICS
     # ══════════════════════════════════════════════════════════════════════════
-    st.markdown('<div class="section-title">📈 ANALYTICS DASHBOARD</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📈 Analytics Dashboard</div>', unsafe_allow_html=True)
 
-    chart_theme = "plotly_dark"
+    PALETTE     = ["#2e5fa3", "#b91c1c", "#d97706", "#7c3aed", "#15803d", "#0891b2"]
+    PLOT_LAYOUT = dict(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#1e2b3c", font_family="Inter",
+        title_font_color="#1b2a4a", title_font_size=14,
+        margin=dict(l=10, r=10, t=42, b=10),
+    )
+
     ac1, ac2 = st.columns(2)
 
     with ac1:
         fig_pie = px.pie(
             filtered_df, names="event_type",
             title="Event Type Distribution",
-            color_discrete_sequence=["#00d4ff","#ff6b35","#39ff14","#a855f7","#f59e0b","#ef4444"],
-            hole=0.45,
+            color_discrete_sequence=PALETTE, hole=0.42,
         )
-        fig_pie.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#94a3b8", title_font_color="#00d4ff",
-            legend=dict(font=dict(color="#94a3b8", size=10)),
-        )
+        fig_pie.update_layout(**PLOT_LAYOUT)
+        fig_pie.update_traces(textfont_size=11)
         st.plotly_chart(fig_pie, use_container_width=True)
 
     with ac2:
@@ -753,93 +904,140 @@ if st.session_state.data_fetched:
         fig_tl = go.Figure()
         fig_tl.add_trace(go.Bar(
             x=timeline["event_date"], y=timeline["events"],
-            name="Events", marker_color="#00d4ff", opacity=0.7
+            name="Events", marker_color="#c8d9f0", opacity=0.9
         ))
         fig_tl.add_trace(go.Scatter(
             x=timeline["event_date"], y=timeline["fatalities"],
             name="Fatalities", mode="lines+markers",
-            line=dict(color="#ff6b35", width=2),
-            yaxis="y2"
+            line=dict(color="#b91c1c", width=2.5),
+            marker=dict(size=4), yaxis="y2"
         ))
         fig_tl.update_layout(
-            title="Events & Fatalities Timeline",
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#94a3b8", title_font_color="#00d4ff",
-            yaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
-            yaxis2=dict(overlaying="y", side="right", gridcolor="rgba(255,255,255,0.0)"),
-            legend=dict(font=dict(color="#94a3b8")),
-            bargap=0.1,
+            **PLOT_LAYOUT, title="Events & Fatalities Timeline",
+            xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
+            yaxis=dict(gridcolor="rgba(0,0,0,0.05)", title="Events"),
+            yaxis2=dict(overlaying="y", side="right", title="Fatalities",
+                        gridcolor="rgba(0,0,0,0)"),
+            legend=dict(orientation="h", y=1.1, font=dict(size=11)), bargap=0.15,
         )
         st.plotly_chart(fig_tl, use_container_width=True)
 
     ac3, ac4 = st.columns(2)
+
     with ac3:
         top_regions = (
             filtered_df.groupby("admin1")
-            .agg(events=("event_id_cnty","count"), fatalities=("fatalities","sum"))
+            .agg(events=("event_id_cnty", "count"), fatalities=("fatalities", "sum"))
             .sort_values("fatalities", ascending=True).tail(12).reset_index()
         )
         fig_bar = px.bar(
             top_regions, x="fatalities", y="admin1", orientation="h",
             title="Top Regions by Fatalities",
-            color="events",
-            color_continuous_scale=["#1e3a5f","#00d4ff"],
+            color="events", color_continuous_scale=["#c8d9f0", "#1b2a4a"],
         )
         fig_bar.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#94a3b8", title_font_color="#00d4ff",
-            xaxis=dict(gridcolor="rgba(255,255,255,0.05)"), yaxis=dict(gridcolor="rgba(0,0,0,0)"),
-            coloraxis_colorbar=dict(tickfont=dict(color="#94a3b8")),
+            **PLOT_LAYOUT,
+            xaxis=dict(gridcolor="rgba(0,0,0,0.06)"), yaxis=dict(gridcolor="rgba(0,0,0,0)"),
+            coloraxis_colorbar=dict(tickfont=dict(color="#4e5f72", size=10)),
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with ac4:
         top_actors = (
             filtered_df.groupby("actor1")
-            .agg(events=("event_id_cnty","count"), fatalities=("fatalities","sum"))
+            .agg(events=("event_id_cnty", "count"), fatalities=("fatalities", "sum"))
             .sort_values("events", ascending=False).head(10).reset_index()
         )
         fig_act = px.bar(
             top_actors, x="actor1", y="events",
             title="Top 10 Actors by Event Count",
-            color="fatalities",
-            color_continuous_scale=["#1e3a5f","#ff6b35"],
+            color="fatalities", color_continuous_scale=["#fde8e8", "#b91c1c"],
         )
         fig_act.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#94a3b8", title_font_color="#00d4ff",
-            xaxis=dict(tickangle=-35, gridcolor="rgba(255,255,255,0.05)"),
-            yaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
-            coloraxis_colorbar=dict(tickfont=dict(color="#94a3b8")),
+            **PLOT_LAYOUT,
+            xaxis=dict(tickangle=-35, gridcolor="rgba(0,0,0,0.06)"),
+            yaxis=dict(gridcolor="rgba(0,0,0,0.06)"),
+            coloraxis_colorbar=dict(tickfont=dict(color="#4e5f72", size=10)),
         )
         st.plotly_chart(fig_act, use_container_width=True)
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SECTION 5 — AUTO BRIEFING GENERATOR
+    # DATA EXPLORER  (always visible, no expander)
     # ══════════════════════════════════════════════════════════════════════════
-    st.markdown('<div class="section-title">📝 AUTO BRIEFING GENERATOR</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📋 Detailed Data Explorer</div>', unsafe_allow_html=True)
 
-    bg_col1, bg_col2 = st.columns([3, 1])
-    with bg_col1:
+    cols_to_show = [c for c in [
+        "event_date", "event_type", "sub_event_type", "country",
+        "admin1", "admin2", "location", "actor1", "actor2",
+        "fatalities", "notes", "source"
+    ] if c in filtered_df.columns]
+
+    search_term = st.text_input(
+        "Search within results",
+        placeholder="Filter by keyword — searches all text columns…",
+        key="table_search"
+    )
+    show_df = filtered_df[cols_to_show].copy()
+    if search_term.strip():
+        mask = show_df.apply(
+            lambda col: col.astype(str).str.contains(search_term, case=False, na=False)
+        ).any(axis=1)
+        show_df = show_df[mask]
+        st.caption(f'Showing {len(show_df):,} matching rows for "{search_term}"')
+
+    st.dataframe(
+        show_df,
+        use_container_width=True,
+        height=420,
+        column_config={
+            "event_date":    st.column_config.DateColumn("Date", format="DD MMM YYYY"),
+            "fatalities":    st.column_config.NumberColumn("Fatalities", format="%d ☠"),
+            "notes":         st.column_config.TextColumn("Notes", width="large"),
+            "event_type":    st.column_config.TextColumn("Event Type", width="medium"),
+            "sub_event_type":st.column_config.TextColumn("Sub-Type", width="medium"),
+        }
+    )
+
+    dl1, dl2 = st.columns(2)
+    dl1.download_button(
+        "📥 Download Filtered Data (CSV)",
+        filtered_df.to_csv(index=False),
+        f"acled_filtered_{date.today()}.csv",
+        "text/csv", use_container_width=True,
+    )
+    dl2.download_button(
+        "📥 Download Current Table View",
+        show_df.to_csv(index=False),
+        f"acled_view_{date.today()}.csv",
+        "text/csv", use_container_width=True,
+    )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # AUTO BRIEFING
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown('<div class="section-title">📝 Auto Briefing Generator</div>', unsafe_allow_html=True)
+
+    bg1, bg2 = st.columns([3, 1])
+    with bg1:
         analyst_context = st.text_area(
             "Analyst Focus / Custom Instructions (optional)",
-            placeholder="e.g. Focus on civilian impact in northern districts. Highlight any shift in IED usage patterns.",
-            height=80,
+            placeholder="e.g. Focus on civilian impact in northern districts. Highlight any IED usage patterns.",
+            height=85,
         )
-    with bg_col2:
-        max_events_for_llm = st.number_input(
+    with bg2:
+        max_events_llm = st.number_input(
             "Max Events for LLM", min_value=10, max_value=500, value=150, step=10,
-            help="Larger samples = richer briefing but slower generation."
+            help="More events = richer briefing but slower generation."
         )
-        generate_btn = st.button("⚡ Generate Briefing", type="primary", use_container_width=True)
+        gen_btn = st.button("⚡ Generate Briefing", type="primary", use_container_width=True)
 
-    if generate_btn:
+    if gen_btn:
         if filtered_df.empty:
-            st.warning("No data to generate a briefing from. Adjust your filters.")
+            st.warning("No data available. Adjust filters and try again.")
         else:
             sample_df = (
-                filtered_df.sample(min(max_events_for_llm, len(filtered_df)), random_state=42)
-                if len(filtered_df) > max_events_for_llm else filtered_df.copy()
+                filtered_df.sample(min(max_events_llm, len(filtered_df)), random_state=42)
+                if len(filtered_df) > max_events_llm else filtered_df.copy()
             )
             with st.spinner(f"Generating intelligence briefing via {llm_source}…"):
                 briefing = generate_briefing(
@@ -851,63 +1049,59 @@ if st.session_state.data_fetched:
 
     if st.session_state.briefing_text:
         text = st.session_state.briefing_text
-        # Color-code risk level keywords
         text_html = (
-            text.replace("CRITICAL", '<span class="status-crit">CRITICAL</span>')
-                .replace("HIGH",     '<span class="status-warn">HIGH</span>')
-                .replace("MEDIUM",   '<span class="status-ok">MEDIUM</span>')
-                .replace("LOW",      '<span class="status-ok">LOW</span>')
+            text.replace("CRITICAL", '<span class="risk-critical">CRITICAL</span>')
+                .replace(" HIGH ",   ' <span class="risk-high">HIGH</span> ')
+                .replace(" MEDIUM ", ' <span class="risk-medium">MEDIUM</span> ')
+                .replace(" LOW ",    ' <span class="risk-low">LOW</span> ')
         )
         st.markdown(
             f'<div class="briefing-box">'
-            f'<div class="briefing-header">// INTELLIGENCE BRIEFING — AUTO-GENERATED — {date.today().strftime("%d %b %Y").upper()}</div>'
+            f'<div class="briefing-stamp">🛡️ Intelligence Briefing &nbsp;·&nbsp; Auto-Generated &nbsp;·&nbsp; {today_str}</div>'
             f'{text_html}</div>',
             unsafe_allow_html=True,
         )
-        col_a, col_b = st.columns(2)
-        col_a.download_button(
+        bc1, bc2 = st.columns(2)
+        bc1.download_button(
             "📥 Download Briefing (.txt)",
             data=st.session_state.briefing_text,
             file_name=f"briefing_{date.today()}.txt",
-            mime="text/plain",
-            use_container_width=True,
+            mime="text/plain", use_container_width=True,
         )
-        if col_b.button("🗑️ Clear Briefing", use_container_width=True):
+        if bc2.button("🗑️ Clear Briefing", use_container_width=True):
             st.session_state.briefing_text = ""
             st.rerun()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # SECTION 6 — DATA EXPLORER
-    # ══════════════════════════════════════════════════════════════════════════
-    with st.expander("📊  DETAILED DATA EXPLORER"):
-        cols_to_show = [
-            c for c in [
-                "event_date","event_type","sub_event_type","country",
-                "admin1","admin2","location","actor1","actor2",
-                "fatalities","notes","source"
-            ] if c in filtered_df.columns
-        ]
-        st.dataframe(filtered_df[cols_to_show], use_container_width=True, height=400)
-        st.download_button(
-            "📥 Download Filtered CSV",
-            filtered_df.to_csv(index=False),
-            f"acled_filtered_{date.today()}.csv",
-            "text/csv",
-            use_container_width=True,
-        )
-
+# ─────────────────────────────────────────────────────────────────────────────
+# WELCOME STATE
+# ─────────────────────────────────────────────────────────────────────────────
 else:
-    # ── Welcome state ─────────────────────────────────────────────────────────
     st.markdown("""
-    <div style="text-align:center; padding: 4rem 2rem; color: #475569;">
-        <div style="font-family:'IBM Plex Mono',monospace; font-size:3rem; color:#1e3a5f; margin-bottom:1rem;">◈</div>
-        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; letter-spacing:0.2em; text-transform:uppercase; color:#334155;">
-            Configure parameters in the sidebar and click <b style="color:#00d4ff">🚀 Fetch Data</b> to begin.
+    <div class="welcome-wrap">
+        <div class="welcome-icon">🛡️</div>
+        <div class="welcome-title">Security Data Explorer</div>
+        <div class="welcome-sub">
+            Configure your parameters in the sidebar and click <strong>Fetch Data</strong> to load
+            ACLED conflict events. Explore interactive maps, analytics, and generate
+            AI-powered intelligence briefings.
         </div>
-        <div style="margin-top:1.5rem; font-size:0.8rem; color:#334155; max-width:600px; margin-left:auto; margin-right:auto; line-height:1.8;">
-            This platform integrates ACLED conflict data with open-source basemaps, 
-            multi-level geographic filters, and an AI-powered briefing engine 
-            using local (Ollama) or free cloud (HuggingFace) LLMs.
+        <div class="welcome-steps">
+            <div class="step-card">
+                <div class="step-num">01</div>
+                <div class="step-text">Set countries &amp; date range in the sidebar</div>
+            </div>
+            <div class="step-card">
+                <div class="step-num">02</div>
+                <div class="step-text">Click Fetch Data to load ACLED events</div>
+            </div>
+            <div class="step-card">
+                <div class="step-num">03</div>
+                <div class="step-text">Filter, explore maps &amp; review analytics</div>
+            </div>
+            <div class="step-card">
+                <div class="step-num">04</div>
+                <div class="step-text">Generate an AI intelligence briefing</div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
