@@ -445,59 +445,53 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    STABLE ROUTER FIX:
-    Uses the microsoft/Phi-3-mini-4k-instruct model.
-    This model is highly available on the new 'router' infrastructure.
+    401 FIX: Cleans the token and uses the most stable serverless path.
     """
-    # Phi-3 is extremely stable on the free tier router right now
+    # Use Phi-3 as it's the most reliable on the free router right now
     model_id = "microsoft/Phi-3-mini-4k-instruct"
-    
-    # This is the exact URL required by the new router
-    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
+    url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
 
-    if not hf_token:
+    # 1. Clean the token (removes accidental spaces or newlines)
+    clean_token = hf_token.strip()
+
+    if not clean_token:
         return "❌ Error: Please enter your Hugging Face Token in the sidebar."
 
+    # 2. Ensure the Authorization header is exactly correct
     headers = {
-        "Authorization": f"Bearer {hf_token}",
+        "Authorization": f"Bearer {clean_token}",
         "Content-Type": "application/json"
     }
 
     payload = {
-        "model": model_id,
-        "messages": [
-            {
-                "role": "system", 
-                "content": "You are a professional security analyst. Provide a structured intelligence briefing."
-            },
-            {
-                "role": "user", 
-                "content": prompt
-            }
-        ],
-        "max_tokens": 1000,
-        "temperature": 0.3
+        "inputs": f"<|system|>You are a security analyst.<|end|><|user|>{prompt}<|end|><|assistant|>",
+        "parameters": {
+            "max_new_tokens": 1000,
+            "temperature": 0.3,
+        },
+        "options": {
+            "wait_for_model": True
+        }
     }
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
-        # Handle the common "Model Loading" 503 state
-        if response.status_code == 503:
-            return "⏳ Model is loading on Hugging Face servers. Please wait 30 seconds and try again."
+        if response.status_code == 401:
+            return "❌ HF API Error 401: Invalid Token. Please check your token in the sidebar and ensure it is a 'Read' token."
         
-        # If the 404 persists here, it means the /v1/ path is blocked in your region
-        if response.status_code == 404:
-            return "❌ HF Error 404: The router endpoint is not responding. Please check your internet connection or try a VPN."
-
+        if response.status_code == 503:
+            return "⏳ Model is loading. Please wait 30 seconds and click Generate again."
+            
         response.raise_for_status()
         result = response.json()
         
-        # Standard OpenAI/HF Chat completion format
-        if "choices" in result and len(result["choices"]) > 0:
-            return result["choices"][0]["message"]["content"].strip()
+        if isinstance(result, list) and len(result) > 0:
+            return result[0].get("generated_text", "").strip()
+        elif isinstance(result, dict) and "generated_text" in result:
+            return result["generated_text"].strip()
             
-        return f"Unexpected response format: {str(result)}"
+        return str(result)
 
     except requests.exceptions.HTTPError as err:
         return f"HF API Error: {err.response.status_code} - {err.response.text}"
@@ -1126,6 +1120,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
