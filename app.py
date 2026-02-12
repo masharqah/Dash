@@ -445,57 +445,53 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    Standard Hugging Face Inference API call.
+    Uses the standard Inference API. 
+    Switched to v0.2 for better stability on the free tier.
     """
-    # Use a highly available model for the free tier
-    # Mistral-7B-v0.2 is usually more stable on the free API than v0.3
-    model_id = "mistralai/Mistral-7B-Instruct-v0.2" 
+    # Mistral-7B-Instruct-v0.2 is more reliably 'warm' on the free serverless API
+    model_id = "mistralai/Mistral-7B-Instruct-v0.2"
     
-    url = f"https://router.huggingface.co/{model_id}"
+    # Use the standard API endpoint
+    url = f"https://api-inference.huggingface.co/models/{model_id}"
 
-    headers = {}
-    if hf_token:
-        headers["Authorization"] = f"Bearer {hf_token}"
-    else:
-        # Many models REQUIRE a token even if they are free. 
-        # Encourage the user to provide one.
-        return "⚠️ Please provide a Hugging Face Token in the sidebar to generate briefings."
+    if not hf_token:
+        return "❌ Error: Please enter your Hugging Face Token in the sidebar."
+
+    headers = {
+        "Authorization": f"Bearer {hf_token}",
+        "Content-Type": "application/json"
+    }
 
     payload = {
-        "inputs": f"<s>[INST] {prompt} [/INST]", # Specific format for Mistral
+        "inputs": f"<s>[INST] {prompt} [/INST]",
         "parameters": {
-            "max_new_tokens": 1000,
-            "temperature": 0.4,
-            "top_p": 0.9,
+            "max_new_tokens": 800,
+            "temperature": 0.5,
             "return_full_text": False,
         },
         "options": {
-            "wait_for_model": True # Crucial: tells HF to load the model if it's 'cold'
+            "wait_for_model": True  # This prevents the 503 error by waiting for the model to load
         }
     }
 
     try:
-        r = requests.post(url, headers=headers, json=payload, timeout=90)
+        r = requests.post(url, headers=headers, json=payload, timeout=120)
         
         if r.status_code == 200:
             result = r.json()
+            # The API returns a list: [{'generated_text': '...'}]
             if isinstance(result, list) and len(result) > 0:
                 return result[0].get("generated_text", "").strip()
             return str(result)
         
         elif r.status_code == 503:
-            return "⏳ Model is currently loading on Hugging Face. Please wait 30 seconds and try again."
+            return "⏳ The model is currently loading on Hugging Face. Please wait 30 seconds and try again."
         
-        elif r.status_code == 401:
-            return "❌ Invalid Hugging Face Token. Please check your token in the sidebar."
+        else:
+            return f"HF Error {r.status_code}: {r.text}"
             
-        elif r.status_code == 403:
-            return f"❌ Access Denied: You may need to visit huggingface.co/{model_id} and accept the terms of use."
-
-        return f"Hugging Face error {r.status_code}: {r.text[:500]}"
-        
     except Exception as e:
-        return f"Hugging Face request failed: {e}"
+        return f"Request failed: {str(e)}"
 
 
 def build_briefing_prompt(df: pd.DataFrame, context: str = "") -> str:
@@ -1120,5 +1116,6 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
