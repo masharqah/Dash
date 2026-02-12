@@ -187,43 +187,47 @@ html, body, .stApp {
     border-right: none;
 }
 [data-testid="stSidebar"] > div { padding-top: 1.5rem; }
-[data-testid="stSidebar"] .stMarkdown p,
+
+/* Labels - Make them bright silver/white so they stand out on navy */
 [data-testid="stSidebar"] label,
-[data-testid="stSidebar"] .stSelectbox label,
-[data-testid="stSidebar"] .stTextInput label,
-[data-testid="stSidebar"] .stDateInput label,
-[data-testid="stSidebar"] .stSlider label {
-    color: rgba(255,255,255,0.65) !important;
-    font-size: 0.78rem !important;
+[data-testid="stSidebar"] .stMarkdown p {
+    color: #cbd5e1 !important; /* Bright silver */
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
 }
-[data-testid="stSidebar"] .section-title {
-    color: rgba(255,255,255,0.40) !important;
-    border-bottom-color: rgba(255,255,255,0.08) !important;
-}
+
+/* Input Fields (Country, Dates, Selectboxes) - Solid background with Dark Text */
 [data-testid="stSidebar"] .stTextInput input,
-[data-testid="stSidebar"] .stDateInput input {
-    background: rgba(255,255,255,0.07) !important;
-    border: 1px solid rgba(255,255,255,0.14) !important;
-    color: #fff !important;
+[data-testid="stSidebar"] .stDateInput input,
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+    background-color: #ffffff !important; /* Solid White */
+    color: #1b2a4a !important;            /* Dark Navy Text */
+    border: 1px solid #ffffff !important;
     border-radius: 7px !important;
 }
-[data-testid="stSidebar"] .stSelectbox > div > div {
-    background: rgba(255,255,255,0.07) !important;
-    border: 1px solid rgba(255,255,255,0.14) !important;
-    color: #fff !important;
+
+/* Fix for Date Picker Icons and Text */
+[data-testid="stSidebar"] .stDateInput div div {
+    color: #1b2a4a !important;
 }
+
+/* Section Titles in Sidebar */
+[data-testid="stSidebar"] .section-title {
+    color: #94a3b8 !important;
+    border-bottom-color: rgba(255,255,255,0.1) !important;
+    margin-top: 2rem;
+}
+
 [data-testid="stSidebar"] .stButton > button {
     background: var(--steel) !important;
     border-color: transparent !important;
     color: #fff !important;
+    margin-top: 10px;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
     background: #3a70b8 !important;
 }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.09) !important; }
-[data-testid="stSidebar"] .stSuccess { background: rgba(21,128,61,0.2) !important; }
-[data-testid="stSidebar"] .stError   { background: rgba(185,28,28,0.2) !important; }
-[data-testid="stSidebar"] .stInfo    { background: rgba(46,95,163,0.2) !important; }
+
 
 /* ─── FILTERS EXPANDER ─── */
 [data-testid="stExpander"] {
@@ -1131,6 +1135,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
