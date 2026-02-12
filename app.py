@@ -453,7 +453,7 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
     Uses Qwen 2.5 (High Availability) and the new Router domain.
     """
     # Qwen 2.5 is currently the most stable model on the HF Router free tier
-    model_id = "Qwen/Qwen2.5-7B-Instruct"
+    model_id = "Qwen/Qwen2.5-7B-Instruct:together"
     
     # This is the exact URL Hugging Face's new router requires for the Chat API
     url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
@@ -1135,6 +1135,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
