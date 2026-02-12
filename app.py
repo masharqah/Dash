@@ -449,13 +449,14 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    FREE TIER STABILITY FIX:
-    Uses SmolLM2-1.7B-Instruct. This model is extremely lightweight 
-    and is designed to always work on the Hugging Face free tier.
+    ULTIMATE ROUTER FIX:
+    Uses the new 'router.huggingface.co' domain and SmolLM2 for Free Tier.
     """
-    # This model is small, fast, and rarely returns 404/503 errors
+    # THE NEW URL: This is mandatory to fix Error 410
+    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
+    
+    # SmolLM2 is high-availability for free users
     model_id = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-    url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     clean_token = hf_token.strip()
     if not clean_token:
@@ -466,40 +467,38 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
         "Content-Type": "application/json"
     }
 
+    # We use the 'messages' format which the new router handles best
     payload = {
-        "inputs": f"<|user|>\n{prompt}<|endoftext|>\n<|assistant|>\n",
-        "parameters": {
-            "max_new_tokens": 800,
-            "temperature": 0.2,
-            "repetition_penalty": 1.1
-        },
-        "options": {
-            "wait_for_model": True  # Force HF to start the model if it's sleeping
-        }
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a professional security analyst."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.3
     }
 
     try:
-        # Increased timeout to 120 seconds for the free tier
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
+        # Check for the model waking up (503)
         if response.status_code == 503:
-            return "⏳ The free-tier server is starting up. Please wait 20 seconds and click 'Generate' again."
+            return "⏳ Free-tier model is waking up. Please wait 20 seconds and click Generate again."
         
-        if response.status_code == 401:
-            return "❌ Invalid Token. Please check your HF Token in the sidebar."
+        # Check for 404 (Specific to the router migration)
+        if response.status_code == 404:
+            return "❌ Router Error 404: This model is temporarily unavailable. Try again in a moment."
 
         response.raise_for_status()
         result = response.json()
         
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get("generated_text", "").split("<|assistant|>")[-1].strip()
-        elif isinstance(result, dict) and "generated_text" in result:
-            return result["generated_text"].split("<|assistant|>")[-1].strip()
+        if "choices" in result and len(result["choices"]) > 0:
+            return result["choices"][0]["message"]["content"].strip()
             
-        return "⚠️ Received an empty response. Try reducing the 'Max Events' slider."
+        return "⚠️ Received an empty response from the server."
 
     except Exception as e:
-        return f"HF Free-Tier Error: {str(e)}"
+        return f"HF Router Error: {str(e)}"
         
 def build_briefing_prompt(df: pd.DataFrame, context: str = "") -> str:
     total_events     = len(df)
@@ -1123,6 +1122,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
