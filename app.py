@@ -451,7 +451,7 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
     # Mistral-7B-v0.2 is usually more stable on the free API than v0.3
     model_id = "mistralai/Mistral-7B-Instruct-v0.2" 
     
-    url = f"https://api-inference.huggingface.co/models/{model_id}"
+    url = f"https://router.huggingface.co/{model_id}"
 
     headers = {}
     if hf_token:
@@ -1120,4 +1120,5 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
