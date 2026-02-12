@@ -449,14 +449,13 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    Llama 3.2 Stability Fix:
-    Uses the most stable model currently available on the HF Router.
+    FREE TIER STABILITY FIX:
+    Uses SmolLM2-1.7B-Instruct. This model is extremely lightweight 
+    and is designed to always work on the Hugging Face free tier.
     """
-    # Llama 3.2 3B is the most 'Pinned' (Always Warm) model on HF right now
-    model_id = "meta-llama/Llama-3.2-3B-Instruct"
-    
-    # Direct model URL on the new router
-    url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
+    # This model is small, fast, and rarely returns 404/503 errors
+    model_id = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     clean_token = hf_token.strip()
     if not clean_token:
@@ -467,46 +466,40 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
         "Content-Type": "application/json"
     }
 
-    # Format specifically for Llama 3.2
     payload = {
-        "inputs": f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+        "inputs": f"<|user|>\n{prompt}<|endoftext|>\n<|assistant|>\n",
         "parameters": {
-            "max_new_tokens": 1200,
-            "temperature": 0.3,
-            "top_p": 0.9,
-            "return_full_text": False
+            "max_new_tokens": 800,
+            "temperature": 0.2,
+            "repetition_penalty": 1.1
         },
         "options": {
-            "wait_for_model": True  # Crucial to prevent 503/404 during load
+            "wait_for_model": True  # Force HF to start the model if it's sleeping
         }
     }
 
     try:
+        # Increased timeout to 120 seconds for the free tier
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
-        # 503 = Model is waking up.
         if response.status_code == 503:
-            return "⏳ The intelligence model is waking up. Please wait 20 seconds and click Generate again."
+            return "⏳ The free-tier server is starting up. Please wait 20 seconds and click 'Generate' again."
         
-        # 404 = Model path issue.
-        if response.status_code == 404:
-            return "❌ HF Error 404: Hugging Face has moved this model. Trying to reconnect..."
+        if response.status_code == 401:
+            return "❌ Invalid Token. Please check your HF Token in the sidebar."
 
         response.raise_for_status()
         result = response.json()
         
-        # The 'models/' endpoint returns a list
         if isinstance(result, list) and len(result) > 0:
-            return result[0].get("generated_text", "").strip()
+            return result[0].get("generated_text", "").split("<|assistant|>")[-1].strip()
         elif isinstance(result, dict) and "generated_text" in result:
-            return result["generated_text"].strip()
+            return result["generated_text"].split("<|assistant|>")[-1].strip()
             
-        return str(result)
+        return "⚠️ Received an empty response. Try reducing the 'Max Events' slider."
 
-    except requests.exceptions.HTTPError as err:
-        return f"HF API Error: {err.response.status_code} - {err.response.text}"
     except Exception as e:
-        return f"Unexpected Error: {str(e)}"
+        return f"HF Free-Tier Error: {str(e)}"
         
 def build_briefing_prompt(df: pd.DataFrame, context: str = "") -> str:
     total_events     = len(df)
@@ -1130,6 +1123,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
