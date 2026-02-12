@@ -445,11 +445,11 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    Uses the modern OpenAI-compatible chat endpoint on Hugging Face.
-    This is the most stable route and avoids the 410/404 domain errors.
+    STRICT FIX for 410 Error: 
+    Combines the new 'router' domain with the mandatory '/hf-inference/' prefix.
     """
-    # The endpoint is now standardized
-    url = "https://api-inference.huggingface.co/v1/chat/completions"
+    # This is the exact URL required to bypass the 410 error
+    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
 
     if not hf_token:
         return "❌ Error: Please enter your Hugging Face Token in the sidebar."
@@ -459,47 +459,45 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
         "Content-Type": "application/json"
     }
 
-    # We use the Chat format (Messages) which is much more reliable
+    # Using Mistral v0.3 via the OpenAI-compatible Chat format
     payload = {
         "model": "mistralai/Mistral-7B-Instruct-v0.3",
         "messages": [
             {
                 "role": "system", 
-                "content": "You are a professional security analyst. Output only the briefing text."
+                "content": "You are a professional security analyst. Write a structured briefing based on the data provided."
             },
             {
                 "role": "user", 
                 "content": prompt
             }
         ],
-        "max_tokens": 1200,
-        "temperature": 0.3,
-        "stream": False
+        "max_tokens": 1500,
+        "temperature": 0.3
     }
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
+        # Handle the model loading state
         if response.status_code == 503:
-            return "⏳ Model is loading on Hugging Face. Please wait 30 seconds and try again."
+            return "⏳ Model is loading on Hugging Face servers. Please wait 30 seconds and try again."
         
+        # Raise error for 410, 404, 401, etc.
         response.raise_for_status()
+        
         result = response.json()
         
-        # Modern response format: result['choices'][0]['message']['content']
+        # Parse the OpenAI-style response format
         if "choices" in result and len(result["choices"]) > 0:
             return result["choices"][0]["message"]["content"].strip()
             
-        return f"Unexpected response format: {str(result)}"
+        return f"Unexpected response: {str(result)}"
 
     except requests.exceptions.HTTPError as err:
-        if err.response.status_code == 404:
-            return "❌ HF API Error 404: Model not found. Check if the model ID is correct."
         return f"HF API Error: {err.response.status_code} - {err.response.text}"
     except Exception as e:
         return f"Unexpected Error: {str(e)}"
-
-
 
 def build_briefing_prompt(df: pd.DataFrame, context: str = "") -> str:
     total_events     = len(df)
@@ -1123,6 +1121,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
