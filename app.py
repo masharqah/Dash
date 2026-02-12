@@ -449,14 +449,14 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    ULTIMATE MIGRATION FIX:
-    Uses Qwen 2.5 (High Availability) and the new Router domain.
+    Llama 3.2 Stability Fix:
+    Uses the most stable model currently available on the HF Router.
     """
-    # Qwen 2.5 is currently the most stable model on the HF Router free tier
+    # Llama 3.2 3B is the most 'Pinned' (Always Warm) model on HF right now
     model_id = "meta-llama/Llama-3.2-3B-Instruct"
     
-    # This is the exact URL Hugging Face's new router requires for the Chat API
-    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
+    # Direct model URL on the new router
+    url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
 
     clean_token = hf_token.strip()
     if not clean_token:
@@ -467,46 +467,41 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
         "Content-Type": "application/json"
     }
 
+    # Format specifically for Llama 3.2
     payload = {
-        "model": model_id,
-        "messages": [
-            {
-                "role": "system", 
-                "content": "You are a professional security analyst. Write a concise, structured intelligence briefing."
-            },
-            {
-                "role": "user", 
-                "content": prompt
-            }
-        ],
-        "max_tokens": 1200,
-        "temperature": 0.3,
-        "stream": False
+        "inputs": f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+        "parameters": {
+            "max_new_tokens": 1200,
+            "temperature": 0.3,
+            "top_p": 0.9,
+            "return_full_text": False
+        },
+        "options": {
+            "wait_for_model": True  # Crucial to prevent 503/404 during load
+        }
     }
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
-        # 1. Handle Model Loading (Working, just warming up)
+        # 503 = Model is waking up.
         if response.status_code == 503:
-            return "⏳ Model is loading on Hugging Face. Please wait 30 seconds and click Generate again."
+            return "⏳ The intelligence model is waking up. Please wait 20 seconds and click Generate again."
         
-        # 2. Handle 410 (Redirected to wrong place)
-        if response.status_code == 410:
-            return "❌ HF Error 410: The API domain has moved. (This code should have bypassed this)."
-
-        # 3. Handle 404 (Model not found on this specific node)
+        # 404 = Model path issue.
         if response.status_code == 404:
-            return "❌ HF Error 404: Model not found. This usually means the model is undergoing maintenance. Try again in 5 minutes."
+            return "❌ HF Error 404: Hugging Face has moved this model. Trying to reconnect..."
 
         response.raise_for_status()
         result = response.json()
         
-        # OpenAI-compatible parsing
-        if "choices" in result and len(result["choices"]) > 0:
-            return result["choices"][0]["message"]["content"].strip()
+        # The 'models/' endpoint returns a list
+        if isinstance(result, list) and len(result) > 0:
+            return result[0].get("generated_text", "").strip()
+        elif isinstance(result, dict) and "generated_text" in result:
+            return result["generated_text"].strip()
             
-        return f"Unexpected response format: {str(result)}"
+        return str(result)
 
     except requests.exceptions.HTTPError as err:
         return f"HF API Error: {err.response.status_code} - {err.response.text}"
@@ -1135,6 +1130,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
