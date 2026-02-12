@@ -445,14 +445,15 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    ULTIMATE FIX: Uses the direct model path on the new router.
-    Avoids 410 (old domain) and 404 (missing v1 mapping).
+    STABLE ROUTER FIX:
+    Uses the microsoft/Phi-3-mini-4k-instruct model.
+    This model is highly available on the new 'router' infrastructure.
     """
-    # We use v0.2 because it has the highest availability on the new router
-    model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+    # Phi-3 is extremely stable on the free tier router right now
+    model_id = "microsoft/Phi-3-mini-4k-instruct"
     
-    # EXACT URL PATH required by the new router for serverless inference
-    url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
+    # This is the exact URL required by the new router
+    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
 
     if not hf_token:
         return "❌ Error: Please enter your Hugging Face Token in the sidebar."
@@ -462,44 +463,47 @@ def call_huggingface(prompt: str, hf_token: str = "") -> str:
         "Content-Type": "application/json"
     }
 
-    # Format for the 'models/' endpoint (Direct Inputs)
     payload = {
-        "inputs": f"<s>[INST] {prompt} [/INST]",
-        "parameters": {
-            "max_new_tokens": 1200,
-            "temperature": 0.3,
-            "return_full_text": False
-        },
-        "options": {
-            "wait_for_model": True
-        }
+        "model": model_id,
+        "messages": [
+            {
+                "role": "system", 
+                "content": "You are a professional security analyst. Provide a structured intelligence briefing."
+            },
+            {
+                "role": "user", 
+                "content": prompt
+            }
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.3
     }
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
-        # 503 means it's working but the model is "waking up"
+        # Handle the common "Model Loading" 503 state
         if response.status_code == 503:
-            return "⏳ Model is loading on Hugging Face. Please wait 30 seconds and click Generate again."
+            return "⏳ Model is loading on Hugging Face servers. Please wait 30 seconds and try again."
         
+        # If the 404 persists here, it means the /v1/ path is blocked in your region
+        if response.status_code == 404:
+            return "❌ HF Error 404: The router endpoint is not responding. Please check your internet connection or try a VPN."
+
         response.raise_for_status()
         result = response.json()
         
-        # The 'models/' endpoint returns a list of dicts
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get("generated_text", "").strip()
-        elif isinstance(result, dict) and "generated_text" in result:
-            return result["generated_text"].strip()
+        # Standard OpenAI/HF Chat completion format
+        if "choices" in result and len(result["choices"]) > 0:
+            return result["choices"][0]["message"]["content"].strip()
             
-        return str(result)
+        return f"Unexpected response format: {str(result)}"
 
     except requests.exceptions.HTTPError as err:
-        # If 404 persists, the model ID might be slightly different on the router
-        if err.response.status_code == 404:
-            return "❌ HF Error 404: Direct model path not found. Hugging Face may be updating this model's location."
         return f"HF API Error: {err.response.status_code} - {err.response.text}"
     except Exception as e:
         return f"Unexpected Error: {str(e)}"
+        
 def build_briefing_prompt(df: pd.DataFrame, context: str = "") -> str:
     total_events     = len(df)
     total_fatalities = int(df["fatalities"].sum())
@@ -1122,6 +1126,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
