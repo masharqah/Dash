@@ -445,53 +445,64 @@ def call_ollama(prompt: str, model: str = "mistral", host: str = "http://localho
 
 def call_huggingface(prompt: str, hf_token: str = "") -> str:
     """
-    401 FIX: Cleans the token and uses the most stable serverless path.
+    ULTIMATE MIGRATION FIX:
+    Uses Qwen 2.5 (High Availability) and the new Router domain.
     """
-    # Use Phi-3 as it's the most reliable on the free router right now
-    model_id = "microsoft/Phi-3-mini-4k-instruct"
-    url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
+    # Qwen 2.5 is currently the most stable model on the HF Router free tier
+    model_id = "Qwen/Qwen2.5-7B-Instruct"
+    
+    # This is the exact URL Hugging Face's new router requires for the Chat API
+    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
 
-    # 1. Clean the token (removes accidental spaces or newlines)
     clean_token = hf_token.strip()
-
     if not clean_token:
         return "❌ Error: Please enter your Hugging Face Token in the sidebar."
 
-    # 2. Ensure the Authorization header is exactly correct
     headers = {
         "Authorization": f"Bearer {clean_token}",
         "Content-Type": "application/json"
     }
 
     payload = {
-        "inputs": f"<|system|>You are a security analyst.<|end|><|user|>{prompt}<|end|><|assistant|>",
-        "parameters": {
-            "max_new_tokens": 1000,
-            "temperature": 0.3,
-        },
-        "options": {
-            "wait_for_model": True
-        }
+        "model": model_id,
+        "messages": [
+            {
+                "role": "system", 
+                "content": "You are a professional security analyst. Write a concise, structured intelligence briefing."
+            },
+            {
+                "role": "user", 
+                "content": prompt
+            }
+        ],
+        "max_tokens": 1200,
+        "temperature": 0.3,
+        "stream": False
     }
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=120)
         
-        if response.status_code == 401:
-            return "❌ HF API Error 401: Invalid Token. Please check your token in the sidebar and ensure it is a 'Read' token."
-        
+        # 1. Handle Model Loading (Working, just warming up)
         if response.status_code == 503:
-            return "⏳ Model is loading. Please wait 30 seconds and click Generate again."
-            
+            return "⏳ Model is loading on Hugging Face. Please wait 30 seconds and click Generate again."
+        
+        # 2. Handle 410 (Redirected to wrong place)
+        if response.status_code == 410:
+            return "❌ HF Error 410: The API domain has moved. (This code should have bypassed this)."
+
+        # 3. Handle 404 (Model not found on this specific node)
+        if response.status_code == 404:
+            return "❌ HF Error 404: Model not found. This usually means the model is undergoing maintenance. Try again in 5 minutes."
+
         response.raise_for_status()
         result = response.json()
         
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get("generated_text", "").strip()
-        elif isinstance(result, dict) and "generated_text" in result:
-            return result["generated_text"].strip()
+        # OpenAI-compatible parsing
+        if "choices" in result and len(result["choices"]) > 0:
+            return result["choices"][0]["message"]["content"].strip()
             
-        return str(result)
+        return f"Unexpected response format: {str(result)}"
 
     except requests.exceptions.HTTPError as err:
         return f"HF API Error: {err.response.status_code} - {err.response.text}"
@@ -1120,6 +1131,7 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
